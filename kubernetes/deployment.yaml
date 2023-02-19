@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-genius
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: deploy-genius
+  template:
+    metadata:
+      labels:
+        app: deploy-genius
+    spec:
+      containers:
+      - name: deploy-genius
+        image: <docker-image-name>:<tag>
+        env:
+        - name: SYMBOL
+          value: AAPL
+        - name: API_KEY
+          value: <your-api-key>
+        - name: DATA_URL
+          value: <your-data-url>
+
