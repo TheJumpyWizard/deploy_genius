@@ -1,5 +1,7 @@
 import os
+import yaml
 from kubernetes import client, config
+import docker
 
 config.load_kube_config()
 
@@ -12,7 +14,7 @@ APP_PORT = os.environ.get('APP_PORT', 5000)
 NAMESPACE = os.environ.get('NAMESPACE', 'default')
 DEPLOYMENT_NAME = os.environ.get('DEPLOYMENT_NAME', 'deploy-genius')
 
-def deploy():
+def deploy(docker_username, docker_password, k8s_deployment_file, k8s_service_file, instance_public_ip):
     # Define the container spec for the deployment
     container = client.V1Container(
         name=APP_NAME,

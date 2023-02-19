@@ -2,41 +2,22 @@ import argparse
 import os
 import yaml
 from dotenv import load_dotenv
-from deploy.deploy import deploy_application
+from deploy.deploy import deploy
+from utils.monitor import Monitor
+from utils.registry import Registry
+from utils.config import Config
+from utils.logger import Logger
+from data.providers import create_ec2_instance
 
 load_dotenv()
 
 def read_config():
     # Read from env vars or .env file
-    symbol = os.environ.get('SYMBOL')
-    api_key = os.environ.get('API_KEY')
-    url = os.environ.get('URL')
     docker_username = os.environ.get('DOCKER_USERNAME')
     docker_password = os.environ.get('DOCKER_PASSWORD')
     k8s_deployment_file = os.environ.get('K8S_DEPLOYMENT_FILE')
     k8s_service_file = os.environ.get('K8S_SERVICE_FILE')
-
-    if not symbol or not api_key or not url or not docker_username or not docker_password or not k8s_deployment_file or not k8s_service_file:
-        with open('.env') as f:
-            for line in f:
-                if not line.startswith('#'):
-                    key, value = line.strip().split('=', 1)
-                    if key == 'SYMBOL':
-                        symbol = value
-                    elif key == 'API_KEY':
-                        api_key = value
-                    elif key == 'URL':
-                        url = value
-                    elif key == 'DOCKER_USERNAME':
-                        docker_username = value
-                    elif key == 'DOCKER_PASSWORD':
-                        docker_password = value
-                    elif key == 'K8S_DEPLOYMENT_FILE':
-                        k8s_deployment_file = value
-                    elif key == 'K8S_SERVICE_FILE':
-                        k8s_service_file = value
-    
-    return symbol, api_key, url, docker_username, docker_password, k8s_deployment_file, k8s_service_file
+    return docker_username, docker_password, k8s_deployment_file, k8s_service_file
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Automate deployment of trading systems to multiple servers using containerization technologies like Docker and Kubernetes.')
@@ -48,15 +29,38 @@ if __name__ == '__main__':
     if args.config:
         with open(args.config) as f:
             config = yaml.safe_load(f)
-        symbol = config.get('symbol')
-        api_key = config.get('api_key')
-        url = config.get('url')
         docker_username = config.get('docker_username')
         docker_password = config.get('docker_password')
         k8s_deployment_file = config.get('k8s_deployment_file')
         k8s_service_file = config.get('k8s_service_file')
     else:
-        symbol, api_key, url, docker_username, docker_password, k8s_deployment_file, k8s_service_file = read_config()
+        docker_username, docker_password, k8s_deployment_file, k8s_service_file = read_config()
 
-    deploy_application(symbol, api_key, url, docker_username, docker_password, k8s_deployment_file, k8s_service_file)
+    # create an EC2 instance
+    instance_details = create_ec2_instance()
+    instance_id = instance_details['instance_id']
+    instance_public_ip = instance_details['instance_public_ip']
+    print(f'Created EC2 instance with instance ID {instance_id} and public IP address {instance_public_ip}')
+
+    # setup monitoring, registry, and logging
+    monitor = Monitor()
+    registry = Registry()
+    config = Config()
+    logger = Logger()
+
+    # deploy the application to the EC2 instance
+    deploy_application(docker_username, docker_password, k8s_deployment_file, k8s_service_file, instance_public_ip)
+
+    # log some messages and metrics
+    logger.log('Deployed application to EC2 instance')
+    logger.log(f'EC2 instance ID: {instance_id}')
+    logger.log(f'EC2 instance public IP: {instance_public_ip}')
+    monitor.send_metric('ec2_instance_created', 1)
+    registry.register_instance(instance_id, instance_public_ip)
+
+    # get some configuration data
+    db_url = config.get('db_url')
+    api_key = config.get('api_key')
+    logger.log(f'Database URL: {db_url}')
+    logger.log(f'API key: {api_key}')
 

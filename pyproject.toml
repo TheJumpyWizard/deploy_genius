@@ -10,6 +10,9 @@ packages = [{include = "deploy_genius"}]
 python = "^3.11"
 kubernetes = "^26.1.0"
 boto3 = "^1.26.74"
+pandas = "^1.5.3"
+matplotlib = "^3.7.0"
+configparser = "^5.3.0"
 
 
 [build-system]
