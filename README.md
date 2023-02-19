@@ -1,4 +1,4 @@
-# Deploy Genius
+# Deploy Genius (WIP - Refactoring)
 ###### Deploy Genius is a Python project that demonstrates how to automate the deployment of containerized applications to multiple servers using Docker and Kubernetes.
 
 The project provides a set of tools for deploying containerized applications and managing the deployment process. These tools include:
